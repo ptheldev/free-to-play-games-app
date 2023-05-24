@@ -3,8 +3,9 @@ const dataJson = "json/games.json";
 const itemsPerPage = 24;
 let currentPage = 1;
 let filterGenre = "";
-let filterPlatform = ""
+let filterPlatform = "";
 
+// get data
 fetch(dataJson)
     .then (data => data.json())
     .then (data => {
@@ -18,6 +19,7 @@ function deleteExceptions(phrase) {
     return phrase.replace(/^\s+/g, '');
 }
 
+// show all genres
 function displayGenres(data) {
     const genresTag = document.querySelector(".filters-genre ul");
     let genresArray = [];
@@ -38,6 +40,7 @@ function displayGenres(data) {
     );
 }
 
+// show all platforms
 function displayPlatforms(data) {
     const platformTag = document.querySelector(".filters-platform ul");
     let platformArray = [];
@@ -58,20 +61,14 @@ function displayPlatforms(data) {
     );
 }
 
+// display all games
 function displayGames(data) {
 
     const gamesContainer = document.querySelector(".results-container");
-    let displayItem;
 
     data.map((item, index) => {
-        displayItem = "";
-        if(index >= (currentPage * itemsPerPage - itemsPerPage) && index < (currentPage * itemsPerPage)) {
-            displayItem = " display-item";
-        } else {
-            displayItem = "";
-        }
         gamesContainer.insertAdjacentHTML("beforeend", `
-        <div class="result-container${displayItem}">
+        <div class="result-container">
             <div class="result">
                 <div>
                     
@@ -101,12 +98,41 @@ function displayGames(data) {
         </div>
         `);
 
-        showPagination(data);
+        filterSortingPagination();
     });
     // <img src="${item.thumbnail}" alt="${item.title}">
 }
 
+function filterSortingPagination() {
+
+    const resultsArray = [...document.querySelectorAll(".result-container")];
+
+    // reset hide all results
+    resultsArray.map((item) => {
+        item.style.display = "none";
+    });
+
+    // show active results
+    resultsArray.map((item, index) => {
+        if(index >= (currentPage * itemsPerPage - itemsPerPage) && index < (currentPage * itemsPerPage)) {
+            item.style.display = "block";
+        } else {
+            displayItem = "none";
+        }
+    });
+
+    showPagination(resultsArray);
+}
+
 function showPagination(data) {
+
+    // refresh pagination items
+    document.querySelector(".results-pagination").innerText = "";
+    document.querySelector(".results-pagination").insertAdjacentHTML("afterbegin", `
+        <div class="pagination-arrows pagination-arrow-prev"><?xml version="1.0" ?><svg height="48" viewBox="0 0 48 48" width="48" xmlns="http://www.w3.org/2000/svg"><path d="M30.83 32.67l-9.17-9.17 9.17-9.17-2.83-2.83-12 12 12 12z"/><path d="M0-.5h48v48h-48z" fill="none"/></svg></div>
+        <div class="pagination-status"></div>
+        <div class="pagination-arrows pagination-arrow-next"><?xml version="1.0" ?><svg height="48" viewBox="0 0 48 48" width="48" xmlns="http://www.w3.org/2000/svg"><path d="M17.17 32.92l9.17-9.17-9.17-9.17 2.83-2.83 12 12-12 12z"/><path d="M0-.25h48v48h-48z" fill="none"/></svg></div>
+        `);
 
     let maxPages = Math.floor(data.length / itemsPerPage) + 1;
 
@@ -118,17 +144,21 @@ function showPagination(data) {
     if(currentPage >= maxPages) {
         document.querySelector(".pagination-arrow-next").classList.add("pagination-arrows-disabled");
     }
-}
 
-document.querySelector(".pagination-arrow-prev").addEventListener("click", function(item) {
-    if(!item.currentTarget.classList.contains("pagination-arrows-disabled")) {
-        currentPage--;
-    }
-    console.log(currentPage);
-});
-document.querySelector(".pagination-arrow-next").addEventListener("click", function(item) {
-    if(!item.currentTarget.classList.contains("pagination-arrows-disabled")) {
-        currentPage++;
-    }
-    console.log(currentPage);
-});
+    // add click events on arrows
+    document.querySelector(".pagination-arrow-prev").addEventListener("click", function(item) {
+        if(!item.currentTarget.classList.contains("pagination-arrows-disabled")) {
+            currentPage--;
+        }
+        console.log(currentPage);
+        filterSortingPagination()
+    });
+    document.querySelector(".pagination-arrow-next").addEventListener("click", function(item) {
+        if(!item.currentTarget.classList.contains("pagination-arrows-disabled")) {
+            currentPage++;
+        }
+        console.log(currentPage);
+        filterSortingPagination()
+    });
+
+}
