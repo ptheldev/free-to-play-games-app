@@ -1,4 +1,12 @@
-const dataJson = "json/games.json";
+// const dataJson = "json/games.json";
+const url = 'https://free-to-play-games-database.p.rapidapi.com/api/games';
+const options = {
+	method: 'GET',
+	headers: {
+		'X-RapidAPI-Key': '498ce47e51msh0f012f4220396edp1ea81bjsne048bfe6e8ad',
+		'X-RapidAPI-Host': 'free-to-play-games-database.p.rapidapi.com'
+	}
+};
 
 const genresTag = document.querySelector(".filters-genre ul");
 const gamesContainer = document.querySelector(".results-container");
@@ -16,7 +24,7 @@ let dataMethods = {
 }
 
 // get data
-fetch(dataJson)
+fetch(url, options)
     .then (data => data.json())
     .then (data => {
         originalData = JSON.parse(JSON.stringify(data));
