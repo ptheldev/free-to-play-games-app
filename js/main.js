@@ -113,7 +113,6 @@ function addInputListeners() {
             }
             displayGames(originalData);
             document.querySelector(`span.clear[clear-type="${event.target.getAttribute("sort-type")}"]`).style.display = "block";
-            console.log(dataMethods);
         })
     })
 }
