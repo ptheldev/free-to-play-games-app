@@ -1,16 +1,26 @@
 const dataJson = "json/games.json";
 
+const genresTag = document.querySelector(".filters-genre ul");
+const gamesContainer = document.querySelector(".results-container");
+const platformTag = document.querySelector(".filters-platform ul");
 const itemsPerPage = 24;
+let originalData;
 let currentPage = 1;
-let filterGenre = "";
-let filterPlatform = "";
+let dataMethods = {
+    filterGenre : "",
+    filterPlatform : "",
+    filterPhrase : "",
+    sortingMethod : ""
+}
 
 // get data
 fetch(dataJson)
     .then (data => data.json())
     .then (data => {
+        originalData = JSON.parse(JSON.stringify(data));
         displayGenres(data);
         displayPlatforms(data);
+        addInputListeners();
         displayGames(data);
     })
     .catch(error => console.log(error));
@@ -19,9 +29,15 @@ function deleteExceptions(phrase) {
     return phrase.replace(/^\s+/g, '');
 }
 
+// mobile filters toggle
+document.querySelector(".filters-mobile-toggle").addEventListener("click", (event) => {
+    document.querySelector(".filters-mobile-toggle").classList.toggle("filters-mobile-toggle-active");
+    document.querySelector(".filters-mobile-content").classList.toggle("filters-mobile-content-active");
+})
+
 // show all genres
 function displayGenres(data) {
-    const genresTag = document.querySelector(".filters-genre ul");
+    
     let genresArray = [];
 
     data.map(item => {
@@ -33,8 +49,8 @@ function displayGenres(data) {
     genresArray.map(item => {
         genresTag.insertAdjacentHTML("beforeend", `
             <li>
-                <input class="input-radio" name="filter" type="radio" id="${item}">
-                <label class="label-radio" for="${item}">${item}</label>
+                <input class="input-radio" name="filter" type="radio" id="${item}" sort-type="genre">
+                <label class="label-radio" for="${item}" sort-type="genre">${item}</label>
             </li>
         `)}
     );
@@ -42,7 +58,7 @@ function displayGenres(data) {
 
 // show all platforms
 function displayPlatforms(data) {
-    const platformTag = document.querySelector(".filters-platform ul");
+    
     let platformArray = [];
 
     data.map(item => {
@@ -54,74 +70,112 @@ function displayPlatforms(data) {
     platformArray.map(item => {
         platformTag.insertAdjacentHTML("beforeend", `
             <li>
-                <input class="input-radio" name="filter" type="radio" id="${item}">
-                <label class="label-radio" for="${item}">${item}</label>
+                <input class="input-radio" name="filter" type="radio" id="${item}" sort-type="platform">
+                <label class="label-radio" for="${item}" sort-type="platform">${item}</label>
             </li>
         `)}
     );
 }
 
+// add click cisteners to filters and sorting
+function addInputListeners() {
+    const inputsArray = [...document.querySelectorAll(".label-radio")];
+    inputsArray.forEach((item) => {
+        item.addEventListener("click", (event) => {
+            currentPage = 1;
+            switch(event.target.getAttribute("sort-type")) {
+                case "genre":
+                    dataMethods.filterGenre = event.target.getAttribute("for");
+                break;
+                case "platform":
+                    dataMethods.filterPlatform = event.target.getAttribute("for");
+                break;
+                case "sorting":
+                    dataMethods.sortingMethod = event.target.getAttribute("for");
+                break;
+            }
+            displayGames(originalData);
+            document.querySelector(`span.clear[clear-type="${event.target.getAttribute("sort-type")}"]`).style.display = "block";
+            console.log(dataMethods);
+        })
+    })
+}
+
+// clear button effect
+[...document.querySelectorAll("span.clear")].forEach(item => {
+    item.addEventListener("click", (event) => {
+        [...document.querySelectorAll(`input[sort-type="${event.target.getAttribute("clear-type")}"]`)].forEach((item) => item.checked = false);
+        switch(event.target.getAttribute("clear-type")) {
+            case "genre":
+                dataMethods.filterGenre = "";
+            break;
+            case "platform":
+                dataMethods.filterPlatform = "";
+            break;
+            case "sorting":
+                dataMethods.sortingMethod = "";
+            break;
+        }
+        displayGames(originalData);
+        event.target.style.display = "none";
+    })   
+});
+
 // display all games
 function displayGames(data) {
 
-    const gamesContainer = document.querySelector(".results-container");
+    let temporaryData = data;
 
-    data.map((item, index) => {
-        gamesContainer.insertAdjacentHTML("beforeend", `
-        <div class="result-container">
-            <div class="result">
-                <div>
-                    
-                    <div class="result-title">${item.title}</div>
-                    <div class="result-desc">
-                        <div>Genre: </div>
-                        <div>${item.genre}</div>
+    // filter by phrase
+    temporaryData = temporaryData.filter(item => item.title.toLowerCase().includes(dataMethods.filterPhrase.toLowerCase()));
+
+    // filter by genre
+    temporaryData = temporaryData.filter(item => item.genre.includes(dataMethods.filterGenre));
+
+    // filter by platform
+    temporaryData = temporaryData.filter(item => item.platform.includes(dataMethods.filterPlatform));
+
+    // sorting
+
+
+    // clear results field
+    gamesContainer.innerText = "";
+
+    temporaryData.map((item, index) => {
+        if(index >= (currentPage * itemsPerPage - itemsPerPage) && index < (currentPage * itemsPerPage)) {
+            gamesContainer.insertAdjacentHTML("beforeend", `
+            <div class="result-container">
+                <div class="result">
+                    <div>
+                        <img src="${item.thumbnail}" alt="${item.title}">
+                        <div class="result-title">${item.title}</div>
+                        <div class="result-desc">
+                            <div>Genre: </div>
+                            <div>${item.genre}</div>
+                        </div>
+                        <div class="result-desc">
+                            <div>Platform: </div>
+                            <div>${item.platform}</div>
+                        </div>
+                        <div class="result-desc">
+                            <div>Producer: </div>
+                            <div>${item.developer}</div>
+                        </div>
+                        <div class="result-desc">
+                            <div>Release date: </div>
+                            <div>${item.release_date}</div>
+                        </div>
                     </div>
-                    <div class="result-desc">
-                        <div>Platform: </div>
-                        <div>${item.platform}</div>
+                    <div class="result-links">
+                        <a href="${item.game_url}">Play this game</a>
+                        <a href="${item.freetogame_profile_url}">Read more</a>
                     </div>
-                    <div class="result-desc">
-                        <div>Producer: </div>
-                        <div>${item.developer}</div>
-                    </div>
-                    <div class="result-desc">
-                        <div>Release date: </div>
-                        <div>${item.release_date}</div>
-                    </div>
-                </div>
-                <div class="result-links">
-                    <a href="${item.game_url}">Play this game</a>
-                    <a href="${item.freetogame_profile_url}">Read more</a>
                 </div>
             </div>
-        </div>
-        `);
-
-        filterSortingPagination();
-    });
-    // <img src="${item.thumbnail}" alt="${item.title}">
-}
-
-function filterSortingPagination() {
-
-    const resultsArray = [...document.querySelectorAll(".result-container")];
-
-    // reset hide all results
-    resultsArray.map((item) => {
-        item.style.display = "none";
-    });
-
-    // show active results
-    resultsArray.map((item, index) => {
-        if(index >= (currentPage * itemsPerPage - itemsPerPage) && index < (currentPage * itemsPerPage)) {
-            item.style.display = "block";
-        } else {
-            displayItem = "none";
+            `);
         }
     });
-
-    showPagination(resultsArray);
+    showPagination(temporaryData);
 }
 
 function showPagination(data) {
@@ -145,20 +199,83 @@ function showPagination(data) {
         document.querySelector(".pagination-arrow-next").classList.add("pagination-arrows-disabled");
     }
 
-    // add click events on arrows
+    // add click events on arrows when arrow is active
     document.querySelector(".pagination-arrow-prev").addEventListener("click", function(item) {
         if(!item.currentTarget.classList.contains("pagination-arrows-disabled")) {
             currentPage--;
         }
-        console.log(currentPage);
-        filterSortingPagination()
+        displayGames(data);
     });
     document.querySelector(".pagination-arrow-next").addEventListener("click", function(item) {
         if(!item.currentTarget.classList.contains("pagination-arrows-disabled")) {
             currentPage++;
         }
-        console.log(currentPage);
-        filterSortingPagination()
+        displayGames(data);
     });
 
 }
+
+
+// Filter suggestions
+let filterContainer = document.querySelector(".suggestions-list");
+const filterInput = document.querySelector(".input");
+
+function filteringResults(filterPhrase) {
+
+    filterContainer.innerText = "";
+
+    if(filterPhrase !== "") {
+
+        // let filterResult = originalData.filter(item => item.title.toLowerCase().includes(filterPhrase.toLowerCase()));
+
+        originalData.filter(item => item.title.toLowerCase().includes(filterPhrase.toLowerCase())).map((item) => {
+            filterContainer.insertAdjacentHTML("beforeend", `
+                <li class="suggestion">
+                    <img class="suggestion-img" src="${item.thumbnail}" alt="${item.title}" width="32" height="32" />
+                    <span>${item.title}</span>
+                </li>
+            `);
+        });
+
+    } else {
+
+        // When input is focus and empty display first 5 suggestions from data
+        originalData.map((item, index) => {
+            if(index < 5) {
+                filterContainer.insertAdjacentHTML("beforeend", `
+                    <li class="suggestion">
+                        <img class="suggestion-img" src="${item.thumbnail}" alt="${item.title}" width="32" height="32" />
+                        <span>${item.title}</span>
+                    </li>
+                `);
+            }
+        });
+
+    }
+
+    // Add click listeners to suggestion items
+    document.querySelectorAll(".suggestion").forEach(function(item) {
+        item.addEventListener("click", function() {
+            dataMethods.filterPhrase = item.children[1].innerText;
+            filterInput.value = item.children[1].innerText;
+            displayGames(originalData);
+            filterContainer.innerText = "";
+        })
+    });
+
+}
+
+// Suggestions show/hide actions
+filterInput.addEventListener("input", (event) => {
+    filteringResults(event.target.value);
+});
+
+filterInput.addEventListener("focus", function(event) {
+    filteringResults(event.target.value);
+});
+
+document.addEventListener("click", function (event) {
+    if(event.target.className !== "input") {
+        filterContainer.innerText = "";
+    }
+});
