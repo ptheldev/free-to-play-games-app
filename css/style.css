@@ -60,13 +60,14 @@ header {
     -webkit-appearance: none;
     -webkit-text-size-adjust: 100%;
     appearance: none;
-    background-color: #fff;
+    background-color: #36526F;
     border-radius: 4px;
     border: 0;
     width: 100%;
     padding: 20px;
     display: block;
     width: 100%;
+    color: #fff;
 }
 .filter:focus, .filter:hover {
     border-color: inherit;

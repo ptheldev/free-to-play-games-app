@@ -3,7 +3,9 @@ const dataJson = "json/games.json";
 const genresTag = document.querySelector(".filters-genre ul");
 const gamesContainer = document.querySelector(".results-container");
 const platformTag = document.querySelector(".filters-platform ul");
+const filterInput = document.querySelector(".input");
 const itemsPerPage = 24;
+let filterContainer = document.querySelector(".suggestions-list");
 let originalData;
 let currentPage = 1;
 let dataMethods = {
@@ -18,6 +20,7 @@ fetch(dataJson)
     .then (data => data.json())
     .then (data => {
         originalData = JSON.parse(JSON.stringify(data));
+        clearAllInputs();
         displayGenres(data);
         displayPlatforms(data);
         addInputListeners();
@@ -34,6 +37,12 @@ document.querySelector(".filters-mobile-toggle").addEventListener("click", (even
     document.querySelector(".filters-mobile-toggle").classList.toggle("filters-mobile-toggle-active");
     document.querySelector(".filters-mobile-content").classList.toggle("filters-mobile-content-active");
 })
+
+// clear all inputs onload 
+function clearAllInputs() {
+    filterInput.value = "";
+    [...document.querySelectorAll('input[type="radio"]')].forEach(item => item.checked = false);
+}
 
 // show all genres
 function displayGenres(data) {
@@ -91,7 +100,7 @@ function addInputListeners() {
                     dataMethods.filterPlatform = event.target.getAttribute("for");
                 break;
                 case "sorting":
-                    dataMethods.sortingMethod = event.target.getAttribute("for");
+                    dataMethods.sortingMethod = event.target.getAttribute("sort-method");
                 break;
             }
             displayGames(originalData);
@@ -136,7 +145,32 @@ function displayGames(data) {
     temporaryData = temporaryData.filter(item => item.platform.includes(dataMethods.filterPlatform));
 
     // sorting
-
+    switch(dataMethods.sortingMethod) {
+        case "alphabetical-asc":
+            temporaryData = temporaryData.sort(function(a, b) {
+                if(a.title.toLowerCase() < b.title.toLowerCase()) { return -1; }
+                if(a.title.toLowerCase() > b.title.toLowerCase()) { return 1; }
+            });
+        break;
+        case "alphabetical-desc":
+            temporaryData = temporaryData.sort(function(a, b) {
+                if(a.title.toLowerCase() < b.title.toLowerCase()) { return 1; }
+                if(a.title.toLowerCase() > b.title.toLowerCase()) { return -1; }
+            });
+        break;
+        case "release-asc":
+            temporaryData = temporaryData.sort(function(a, b) {
+                if(a.release_date.toLowerCase() < b.release_date.toLowerCase()) { return -1; }
+                if(a.release_date.toLowerCase() > b.release_date.toLowerCase()) { return 1; }
+            });
+        break;
+        case "release-desc":
+            temporaryData = temporaryData.sort(function(a, b) {
+                if(a.release_date.toLowerCase() < b.release_date.toLowerCase()) { return 1; }
+                if(a.release_date.toLowerCase() > b.release_date.toLowerCase()) { return -1; }
+            });
+        break;
+    }
 
     // clear results field
     gamesContainer.innerText = "";
@@ -217,9 +251,6 @@ function showPagination(data) {
 
 
 // Filter suggestions
-let filterContainer = document.querySelector(".suggestions-list");
-const filterInput = document.querySelector(".input");
-
 function filteringResults(filterPhrase) {
 
     filterContainer.innerText = "";
