@@ -12,7 +12,9 @@ const genresTag = document.querySelector(".filters-genre ul");
 const gamesContainer = document.querySelector(".results-container");
 const platformTag = document.querySelector(".filters-platform ul");
 const filterInput = document.querySelector(".input");
+const searchButton = document.querySelector(".search-button");
 const itemsPerPage = 24;
+let searchPhrase = "";
 let filterContainer = document.querySelector(".suggestions-list");
 let originalData;
 let currentPage = 1;
@@ -94,7 +96,7 @@ function displayPlatforms(data) {
     );
 }
 
-// add click cisteners to filters and sorting
+// add click listeners to filters and sorting
 function addInputListeners() {
     const inputsArray = [...document.querySelectorAll(".label-radio")];
     inputsArray.forEach((item) => {
@@ -120,6 +122,7 @@ function addInputListeners() {
 // clear button effect
 [...document.querySelectorAll("span.clear")].forEach(item => {
     item.addEventListener("click", (event) => {
+        event.stopPropagation();
         [...document.querySelectorAll(`input[sort-type="${event.target.getAttribute("clear-type")}"]`)].forEach((item) => item.checked = false);
         switch(event.target.getAttribute("clear-type")) {
             case "genre":
@@ -143,7 +146,9 @@ function displayGames(data) {
     let temporaryData = data;
 
     // filter by phrase
-    temporaryData = temporaryData.filter(item => item.title.toLowerCase().includes(dataMethods.filterPhrase.toLowerCase()));
+    if(dataMethods.filterPhrase !== "") {
+        temporaryData = temporaryData.filter(item => item.title.toLowerCase().includes(dataMethods.filterPhrase.toLowerCase()));
+    }
 
     // filter by genre
     temporaryData = temporaryData.filter(item => item.genre.includes(dataMethods.filterGenre));
@@ -298,6 +303,7 @@ function filteringResults(filterPhrase) {
             filterInput.value = item.children[1].innerText;
             displayGames(originalData);
             filterContainer.innerText = "";
+            searchButton.classList.add("selected-item");
         })
     });
 
@@ -306,10 +312,41 @@ function filteringResults(filterPhrase) {
 // Suggestions show/hide actions
 filterInput.addEventListener("input", (event) => {
     filteringResults(event.target.value);
+    if(event.target.value === searchPhrase) {
+        searchButton.classList.add("selected-item");
+    } else {
+        searchButton.classList.remove("selected-item");
+    }
 });
 
 filterInput.addEventListener("focus", function(event) {
     filteringResults(event.target.value);
+});
+
+// search button actions
+function searchButtonAction(event) {
+    event.stopPropagation();
+    if(searchButton.classList.contains("selected-item")) {
+        dataMethods.filterPhrase = "";
+        filterInput.value = "";
+        displayGames(originalData);
+        searchButton.classList.remove("selected-item");
+        filterContainer.innerText = "";
+    } else {
+        searchButton.classList.add("selected-item");
+        dataMethods.filterPhrase = filterInput.value;
+        displayGames(originalData);
+        filterContainer.innerText = "";
+    }
+    searchPhrase = filterInput.value;
+}
+searchButton.addEventListener("click", function(event) {
+    searchButtonAction(event);
+});
+filterInput.addEventListener("keypress", function(event) {
+    if (event.key === "Enter") {
+        searchButtonAction(event);
+    }
 });
 
 document.addEventListener("click", function (event) {
